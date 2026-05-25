@@ -15,7 +15,7 @@ public class Aeronave {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id;
+    private int id;
 
     @Column(name = "patente", nullable = false, unique = true, length = 30)
     private String patente; // Registro obligatorio según DAN 151 (ej. "CC-AAA")
@@ -40,7 +40,7 @@ public class Aeronave {
     }
 
     // Constructor completo (Actualizado con el nuevo campo)
-    public Aeronave(Long id, String patente, String numeroSerie, String marca, String modelo, String estado, LocalDate fechaVencimientoSeguro) {
+    public Aeronave(int id, String patente, String numeroSerie, String marca, String modelo, String estado, LocalDate fechaVencimientoSeguro) {
         this.id = id;
         this.patente = patente;
         this.numeroSerie = numeroSerie;
@@ -51,11 +51,11 @@ public class Aeronave {
     }
 
     // Getters y Setters Manuales
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
