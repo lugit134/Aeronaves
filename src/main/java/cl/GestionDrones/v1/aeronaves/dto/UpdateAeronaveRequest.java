@@ -1,17 +1,20 @@
 package cl.GestionDrones.v1.aeronaves.dto;
 
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
 import java.time.LocalDate;
 
 /**
  * DTO para actualizar una aeronave existente (PUT).
- * No incluye ID porque se obtiene del path parameter en la URL del endpoint.
+ * No incluye el ID de la aeronave porque se obtiene del path parameter en la URL del endpoint.
  */
 public record UpdateAeronaveRequest(
+        
+        // AGREGADO: Validación para el ID de la empresa proveedora (vínculo entre microservicios)
+        @NotNull(message = "El ID de la empresa proveedora es obligatorio")
+        Long idEmpresaProveedora,
+
         @NotBlank(message = "La patente no puede ser vacía") 
         String patente,
 
@@ -28,7 +31,7 @@ public record UpdateAeronaveRequest(
         String estado, // Ejemplo: "ACTIVO", "EN_MANTENIMIENTO", "RETIRO"
 
         @NotNull(message = "La fecha de vencimiento del seguro es obligatoria")
-        @Future(message = "El seguro ya ha expirado ")
+        // CORREGIDO: Se mantiene solo FutureOrPresent para evitar redundancia con @Future
         @FutureOrPresent(message = "El seguro contratado debe estar vigente (fecha actual o futura)")
         LocalDate fechaVencimientoSeguro
 ) {}

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cl.GestionDrones.v1.aeronaves.dto.CreateAeronaveRequest;
 import cl.GestionDrones.v1.aeronaves.dto.UpdateAeronaveRequest;
-import cl.GestionDrones.v1.aeronaves.exception.ResourceNotFoundException;
 import cl.GestionDrones.v1.aeronaves.mapper.AeronaveMapper;
 import cl.GestionDrones.v1.aeronaves.model.Aeronave;
 import cl.GestionDrones.v1.aeronaves.service.AeronaveService;
@@ -44,28 +43,27 @@ public class AeronaveController {
                 return ResponseEntity.status(HttpStatus.CREATED).body(nuevaAeronave);
         }
 
-        @GetMapping("{id}")
-        public ResponseEntity<Aeronave> buscarAeronave(@PathVariable int id) { // <-- Usa int
+        @GetMapping("/{id}") // BUENA PRÁCTICA: Se agrega la barra suelta para evitar problemas de rutas
+        public ResponseEntity<Aeronave> buscarAeronave(@PathVariable Long id) { 
+                // NOTA: Ya no es necesario el bloque "if (aeronave == null)" ni lanzar ResourceNotFoundException a mano.
+                // El AeronaveService ahora lanza EntityNotFoundException automáticamente,
+                // y el GlobalExceptionHandler lo traduce a un error 404 limpio.
                 Aeronave aeronave = aeronaveService.getAeronaveId(id);
-
-                if (aeronave == null) {
-                        throw new ResourceNotFoundException("Aeronave no encontrada para id: " + id);
-                }
-
                 return ResponseEntity.ok(aeronave);
         }
 
-        @PutMapping("{id}")
-        public ResponseEntity<Aeronave> actualizarAeronave(@PathVariable int id, // <-- CORREGIDO: Cambiado de Long a int
+        @PutMapping("/{id}")
+        public ResponseEntity<Aeronave> actualizarAeronave(
+                        @PathVariable Long id, // CORREGIDO: Cambiado de int a Long para sincronizar con el Mapper
                         @Valid @RequestBody UpdateAeronaveRequest request) {
                 
-                // Ahora calza perfecto con AeronaveMapper.toModel(int, request)
+                // Ahora calza perfecto con AeronaveMapper.toModel(Long, request) y el color rojo se borra
                 Aeronave aeronaveActualizada = aeronaveService.updateAeronave(AeronaveMapper.toModel(id, request));
                 return ResponseEntity.ok(aeronaveActualizada);
         }
 
-        @DeleteMapping("{id}")
-        public ResponseEntity<Void> eliminarAeronave(@PathVariable int id) { // <-- Usa int
+        @DeleteMapping("/{id}")
+        public ResponseEntity<Void> eliminarAeronave(@PathVariable Long id) { 
                 aeronaveService.deleteAeronave(id);
                 return ResponseEntity.noContent().build(); // 204 No Content
         }
@@ -77,12 +75,18 @@ public class AeronaveController {
         }
 
         @GetMapping("/patente/{patente}")
-        public List<Aeronave> selectPorPatente(@PathVariable String patente) {
-        return aeronaveService.obtenerPorPatente(patente);
+        public ResponseEntity<List<Aeronave>> selectPorPatente(@PathVariable String patente) { // BUENA PRÁCTICA: Envuelto en ResponseEntity
+                return ResponseEntity.ok(aeronaveService.obtenerPorPatente(patente));
         }
 
         @GetMapping("/numeroSerie/{numeroSerie}")
-        public List<Aeronave> selectPorNumeroSerie(@PathVariable String numeroSerie) {
-        return aeronaveService.obtenerPorNumeroSerie(numeroSerie);
+        public ResponseEntity<List<Aeronave>> selectPorNumeroSerie(@PathVariable String numeroSerie) { // BUENA PRÁCTICA: Envuelto en ResponseEntity
+                return ResponseEntity.ok(aeronaveService.obtenerPorNumeroSerie(numeroSerie));
         }
+
+        @GetMapping("/empresa/{idEmpresaProveedora}")
+        public ResponseEntity<List<Aeronave>> buscarPorEmpresa(@PathVariable Long idEmpresaProveedora) {
+        List<Aeronave> aeronaves = aeronaveService.obtenerPorEmpresaProveedora(idEmpresaProveedora);
+        return ResponseEntity.ok(aeronaves);
+    }
 }

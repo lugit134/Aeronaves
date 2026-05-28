@@ -42,6 +42,23 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+
+    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    public ProblemDetail handleEntityNotFound(jakarta.persistence.EntityNotFoundException ex) {
+        System.out.println("🔴 GlobalExceptionHandler EJECUTADO - Aeronave no encontrada: " + ex.getMessage());
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, 
+                ex.getMessage()
+        );
+
+        problem.setTitle("Aeronave No Registrada");
+        problem.setProperty("timestamp", Instant.now());
+        problem.setProperty("codigo_error", "DGAC-ERR-AERONAVE-404");
+        
+        return problem;
+    }
+
     /**
      * Maneja errores de validación Jakarta (como fechas de seguros o patentes vacías) con Problem Details
      */

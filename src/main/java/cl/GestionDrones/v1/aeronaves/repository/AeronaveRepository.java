@@ -1,33 +1,28 @@
 package cl.GestionDrones.v1.aeronaves.repository;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import cl.GestionDrones.v1.aeronaves.model.Aeronave;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
+
 @Repository
-//public class AeronaveRepository {
-    // private List<Libro> listaLibros = new ArrayList<Libro>();
-public interface AeronaveRepository extends JpaRepository<Aeronave, Integer> {
-    // Consulta nativa simple
-    @Query(value = "SELECT * FROM Aeronaves WHERE patente = :patente", nativeQuery = true)
+public interface AeronaveRepository extends JpaRepository<Aeronave, Long> { // 1. CORREGIDO: De Integer a Long
+
+    // 2. CORREGIDO: Tabla 'aeronaves' en minúsculas para coincidir exactamente con la BD
+    @Query(value = "SELECT * FROM aeronaves WHERE patente = :patente", nativeQuery = true)
     List<Aeronave> selectPorPatente(@Param("patente") String patente);
-    //otra alternativa   
-    // Libro findByEmailCustom(@Param("editorial") String editorial);
 
-    @Query(value = "SELECT * FROM Aeronaves WHERE numeroSerie = :numeroSerie", nativeQuery = true)
+    // 3. CORREGIDO: Columna cambiada a 'numero_serie' (snake_case) porque es una Query Nativa
+    @Query(value = "SELECT * FROM aeronaves WHERE numero_serie = :numeroSerie", nativeQuery = true)
     List<Aeronave> selectPorNumeroSerie(@Param("numeroSerie") String numeroSerie);
- 
- 
-    // Consulta con JOINs nativos
-   // @Query(value = "SELECT l.* FROM libros l INNER JOIN editorial e ON l.editorial = e.editorial WHERE e.editorial = ?1", 
-    //       nativeQuery = true)
-   // List<Libro> findByRoleName(String roleName);
 
+    // NUEVA CONSULTA: Permite al microservicio listar toda la flota de una empresa proveedora específica
+    @Query(value = "SELECT * FROM aeronaves WHERE id_empresa_proveedora = :idEmpresaProveedora", nativeQuery = true)
+    List<Aeronave> selectPorEmpresaProveedora(@Param("idEmpresaProveedora") Long idEmpresaProveedora);
 
     default int totalAeronaves() {
-        return (int) this.count(); // ← "this" se refiere a la instancia del repository
+        return (int) this.count(); 
     }
-    
-
 }

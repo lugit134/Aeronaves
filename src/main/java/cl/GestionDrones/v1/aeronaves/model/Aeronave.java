@@ -15,33 +15,38 @@ public class Aeronave {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Long id; // Identificador único de la aeronave en el sistema de la DGAC
+
+    // RELACIÓN LÓGICA: Vinculación con el microservicio de Empresas Proveedoras (Ej: DroneChile SpA)
+    @Column(name = "id_empresa_proveedora", nullable = false)
+    private Long idEmpresaProveedora; 
 
     @Column(name = "patente", nullable = false, unique = true, length = 30)
-    private String patente; // Registro obligatorio según DAN 151 (ej. "CC-AAA")
+    private String patente; // Código de registro obligatorio según DAN 151 (ej. "CC-RPA-1234")
 
     @Column(name = "numero_serie", nullable = false, unique = true, length = 100)
-    private String numeroSerie;
+    private String numeroSerie; // Número de serie físico de fábrica del dron
 
     @Column(name = "marca", nullable = false, length = 50)
-    private String marca;
+    private String marca; // Ej: "DJI", "SenseFly"
 
     @Column(name = "modelo", nullable = false, length = 100)
-    private String modelo;
+    private String modelo; // Ej: "Matrice 300 RTK", "Phantom 4 Pro"
 
     @Column(name = "estado", nullable = false, length = 30)
-    private String estado; // ACTIVO, EN_MANTENIMIENTO, RETIRO
+    private String estado; // Estados operacionales: ACTIVO, EN_MANTENIMIENTO, RETIRADO
 
     @Column(name = "fecha_vencimiento_seguro", nullable = false)
-    private LocalDate fechaVencimientoSeguro; // Reincorporado para alertas de expiración
+    private LocalDate fechaVencimientoSeguro; // Crucial para las alertas automáticas antes de que expire la cobertura
 
-    // Constructor sin argumentos (Requerido por JPA)
+    // Constructor sin argumentos (Obligatorio para que JPA pueda instanciar la entidad)
     public Aeronave() {
     }
 
-    // Constructor completo (Actualizado con el nuevo campo)
-    public Aeronave(int id, String patente, String numeroSerie, String marca, String modelo, String estado, LocalDate fechaVencimientoSeguro) {
+    // Constructor completo (Ideal para Mappers, DTOs y pruebas unitarias)
+    public Aeronave(Long id, Long idEmpresaProveedora, String patente, String numeroSerie, String marca, String modelo, String estado, LocalDate fechaVencimientoSeguro) {
         this.id = id;
+        this.idEmpresaProveedora = idEmpresaProveedora;
         this.patente = patente;
         this.numeroSerie = numeroSerie;
         this.marca = marca;
@@ -50,21 +55,30 @@ public class Aeronave {
         this.fechaVencimientoSeguro = fechaVencimientoSeguro;
     }
 
-    // Getters y Setters Manuales
-    public int getId() {
+    // --- Getters y Setters Estándar ---
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getPatenteDgac() {
+    public Long getIdEmpresaProveedora() {
+        return idEmpresaProveedora;
+    }
+
+    public void setIdEmpresaProveedora(Long idEmpresaProveedora) {
+        this.idEmpresaProveedora = idEmpresaProveedora;
+    }
+
+    public String getPatente() {
         return patente;
     }
 
-    public void setPatenteDgac(String patenteDgac) {
-        this.patente = patenteDgac;
+    public void setPatente(String patente) {
+        this.patente = patente;
     }
 
     public String getNumeroSerie() {
