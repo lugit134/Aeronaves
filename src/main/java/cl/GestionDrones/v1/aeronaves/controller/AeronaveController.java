@@ -1,6 +1,7 @@
 package cl.GestionDrones.v1.aeronaves.controller;
 
 import java.util.List;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,7 +26,6 @@ public class AeronaveController {
 
         private final AeronaveService aeronaveService;
 
-        // Constructor injection
         public AeronaveController(AeronaveService aeronaveService) {
                 this.aeronaveService = aeronaveService;
         }
@@ -33,60 +33,134 @@ public class AeronaveController {
         @GetMapping
         public ResponseEntity<List<Aeronave>> listarAeronaves() {
                 List<Aeronave> aeronaves = aeronaveService.getAeronaves();
+                
+                if (aeronaves.isEmpty()) {
+                        return ResponseEntity.noContent().build();
+                }
+                
                 return ResponseEntity.ok(aeronaves);
         }
 
         @PostMapping
         public ResponseEntity<Aeronave> agregarAeronave(@Valid @RequestBody CreateAeronaveRequest request) {
-                // @Valid ejecuta validaciones Jakarta automáticamente (patente, fechas del seguro)
+                // Validación manual: La patente no puede ser nula ni vacía
+                if (request.patente() == null || request.patente().trim().isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
+                // Validación manual de negocio: El seguro no puede registrarse vencido
+                if (request.fechaVencimientoSeguro() != null && request.fechaVencimientoSeguro().isBefore(LocalDate.now())) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
                 Aeronave nuevaAeronave = aeronaveService.saveAeronave(AeronaveMapper.toModel(request));
+                
+                if (nuevaAeronave == null) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+                
                 return ResponseEntity.status(HttpStatus.CREATED).body(nuevaAeronave);
         }
 
-        @GetMapping("/{id}") // BUENA PRÁCTICA: Se agrega la barra suelta para evitar problemas de rutas
-        public ResponseEntity<Aeronave> buscarAeronave(@PathVariable Long id) { 
-                // NOTA: Ya no es necesario el bloque "if (aeronave == null)" ni lanzar ResourceNotFoundException a mano.
-                // El AeronaveService ahora lanza EntityNotFoundException automáticamente,
-                // y el GlobalExceptionHandler lo traduce a un error 404 limpio.
+        @GetMapping("/{id}")
+        public ResponseEntity<Aeronave> buscarAeronave(@PathVariable Long id) {
+                if (id <= 0) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
                 Aeronave aeronave = aeronaveService.getAeronaveId(id);
+                
+                if (aeronave == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                }
+                
                 return ResponseEntity.ok(aeronave);
         }
 
         @PutMapping("/{id}")
-        public ResponseEntity<Aeronave> actualizarAeronave(
-                        @PathVariable Long id, // CORREGIDO: Cambiado de int a Long para sincronizar con el Mapper
+        public ResponseEntity<Aeronave> actualizarAeronave(@PathVariable Long id,
                         @Valid @RequestBody UpdateAeronaveRequest request) {
                 
-                // Ahora calza perfecto con AeronaveMapper.toModel(Long, request) y el color rojo se borra
+                if (id <= 0) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
+                if (request.patente() == null || request.patente().contains(" ")) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
                 Aeronave aeronaveActualizada = aeronaveService.updateAeronave(AeronaveMapper.toModel(id, request));
+                
+                if (aeronaveActualizada == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                }
+                
                 return ResponseEntity.ok(aeronaveActualizada);
         }
 
         @DeleteMapping("/{id}")
-        public ResponseEntity<Void> eliminarAeronave(@PathVariable Long id) { 
+        public ResponseEntity<Void> eliminarAeronave(@PathVariable Long id) {
+                if (id <= 0) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
                 aeronaveService.deleteAeronave(id);
-                return ResponseEntity.noContent().build(); // 204 No Content
+                return ResponseEntity.noContent().build(); 
         }
 
         @GetMapping("/total")
         public ResponseEntity<Integer> totalAeronaves() {
                 int total = aeronaveService.totalAeronavesV2();
+                
+                if (total < 0) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(0);
+                }
+                
                 return ResponseEntity.ok(total);
         }
 
         @GetMapping("/patente/{patente}")
-        public ResponseEntity<List<Aeronave>> selectPorPatente(@PathVariable String patente) { // BUENA PRÁCTICA: Envuelto en ResponseEntity
-                return ResponseEntity.ok(aeronaveService.obtenerPorPatente(patente));
+        public ResponseEntity<List<Aeronave>> selectPorPatente(@PathVariable String patente) {
+                if (patente == null || patente.trim().isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
+                List<Aeronave> aeronaves = aeronaveService.obtenerPorPatente(patente);
+                
+                if (aeronaves.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(aeronaves);
+                }
+                
+                return ResponseEntity.ok(aeronaves);
         }
 
         @GetMapping("/numeroSerie/{numeroSerie}")
-        public ResponseEntity<List<Aeronave>> selectPorNumeroSerie(@PathVariable String numeroSerie) { // BUENA PRÁCTICA: Envuelto en ResponseEntity
-                return ResponseEntity.ok(aeronaveService.obtenerPorNumeroSerie(numeroSerie));
+        public ResponseEntity<List<Aeronave>> selectPorNumeroSerie(@PathVariable String numeroSerie) {
+                if (numeroSerie == null || numeroSerie.trim().isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
+                List<Aeronave> aeronaves = aeronaveService.obtenerPorNumeroSerie(numeroSerie);
+                
+                if (aeronaves.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(aeronaves);
+                }
+                
+                return ResponseEntity.ok(aeronaves);
         }
 
         @GetMapping("/empresa/{idEmpresaProveedora}")
         public ResponseEntity<List<Aeronave>> buscarPorEmpresa(@PathVariable Long idEmpresaProveedora) {
-        List<Aeronave> aeronaves = aeronaveService.obtenerPorEmpresaProveedora(idEmpresaProveedora);
-        return ResponseEntity.ok(aeronaves);
-    }
+                if (idEmpresaProveedora <= 0) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+                
+                List<Aeronave> aeronaves = aeronaveService.obtenerPorEmpresaProveedora(idEmpresaProveedora);
+                
+                if (aeronaves.isEmpty()) {
+                        return ResponseEntity.noContent().build();
+                }
+                
+                return ResponseEntity.ok(aeronaves);
+        }
 }
